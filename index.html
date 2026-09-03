@@ -1,0 +1,2136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEON AFTER DARK</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html{font-size:18px}
+body{
+width:100%;height:100%;overflow:hidden;
+font-family:"Inter",Arial,sans-serif;background:#000;color:white;
+--text-scale:1;--accent:#ff4fb3;--accent2:#b96cff;--accent3:#ff77c8;
+}
+button{font-family:inherit}
+
+#background{
+position:fixed;inset:0;z-index:-20;
+background:
+radial-gradient(circle at 18% 15%,rgba(145,72,255,.18),transparent 27%),
+radial-gradient(circle at 82% 78%,rgba(255,55,165,.16),transparent 30%),
+radial-gradient(circle at 55% 45%,rgba(255,255,255,.025),transparent 45%),#000;
+transition:background 1s ease,transform 1.4s ease;
+}
+#background:before{
+content:"";position:absolute;inset:-20%;
+background:
+radial-gradient(ellipse at 30% 20%,rgba(255,255,255,.025),transparent 25%),
+radial-gradient(ellipse at 75% 65%,rgba(180,90,255,.05),transparent 28%);
+filter:blur(80px);animation:backgroundFloat 12s ease-in-out infinite alternate;
+}
+@keyframes backgroundFloat{
+from{transform:translate(-2%,-1%) scale(1)}
+to{transform:translate(2%,2%) scale(1.08)}
+}
+
+#noise{
+position:fixed;inset:0;z-index:100;pointer-events:none;opacity:.035;
+mix-blend-mode:overlay;
+background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.glass{
+position:relative;
+background:linear-gradient(135deg,rgba(255,255,255,.27),rgba(235,235,242,.15) 17%,rgba(255,255,255,.055) 37%,rgba(160,120,205,.095) 57%,rgba(255,85,175,.085) 75%,rgba(255,255,255,.15));
+border:1px solid rgba(255,255,255,.38);
+backdrop-filter:blur(35px) saturate(170%) contrast(105%);
+-webkit-backdrop-filter:blur(35px) saturate(170%) contrast(105%);
+box-shadow:0 30px 90px rgba(0,0,0,.75),0 0 50px rgba(140,70,255,.07),0 0 80px rgba(255,70,170,.04),inset 0 1px 2px rgba(255,255,255,.72),inset 0 -2px 8px rgba(0,0,0,.25);
+overflow:hidden;isolation:isolate;
+}
+.glass:before{
+content:"";position:absolute;inset:-40%;pointer-events:none;
+background:linear-gradient(115deg,transparent 20%,rgba(255,255,255,.36) 28%,rgba(255,255,255,.08) 33%,transparent 40%);
+transform:translate(var(--mouse-x,50%),var(--mouse-y,50%)) rotate(-8deg);
+opacity:.5;filter:blur(12px);mix-blend-mode:screen;
+}
+
+/* INTRO */
+#intro{
+position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
+padding:30px;transition:opacity .8s,transform .8s;
+}
+.intro-card{width:min(950px,95vw);padding:75px 60px;border-radius:44px;text-align:center}
+.eyebrow{font-size:13px;letter-spacing:6px;text-transform:uppercase;color:rgba(255,255,255,.58);margin-bottom:25px}
+.logo{
+font-size:clamp(55px,9vw,115px);font-weight:800;letter-spacing:-7px;line-height:.86;
+background:linear-gradient(110deg,#fff,#cfcfd8,#fff,#b88cff,#ff8bc1,#fff);
+background-size:300%;-webkit-background-clip:text;color:transparent;animation:logoShine 8s linear infinite;
+}
+@keyframes logoShine{0%{background-position:0%}100%{background-position:300%}}
+.intro-description{max-width:650px;margin:38px auto 45px;color:rgba(255,255,255,.72);line-height:1.85;font-size:calc(16px * var(--text-scale))}
+.start-btn,.restart{
+border:1px solid rgba(255,255,255,.46);color:white;
+background:linear-gradient(135deg,rgba(255,255,255,.28),rgba(165,120,230,.14),rgba(255,80,180,.13));
+padding:19px 40px;border-radius:999px;font-size:calc(13px * var(--text-scale));
+font-weight:700;letter-spacing:1.7px;cursor:pointer;backdrop-filter:blur(25px);
+box-shadow:0 15px 50px rgba(0,0,0,.5),0 0 35px rgba(150,80,255,.12),inset 0 1px 2px rgba(255,255,255,.65);
+transition:.4s;
+}
+.start-btn:hover,.restart:hover{transform:translateY(-4px) scale(1.05);box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 50px rgba(150,70,255,.2),0 0 70px rgba(255,60,180,.12)}
+
+#game{position:fixed;inset:0;opacity:0;pointer-events:none;transition:opacity .8s}
+#game.active{opacity:1;pointer-events:auto}
+
+.topbar{
+position:absolute;top:25px;left:25px;right:25px;display:flex;
+justify-content:space-between;align-items:center;z-index:20;
+}
+.brand,.chapter{padding:14px 20px;border-radius:999px;font-size:calc(12px * var(--text-scale));letter-spacing:2px}
+.brand{font-weight:700}.chapter{color:rgba(255,255,255,.75)}
+
+.accessibility{position:absolute;top:85px;left:25px;z-index:30}
+.accessibility-toggle{
+width:52px;height:52px;border-radius:50%;border:1px solid rgba(255,255,255,.4);color:white;
+background:linear-gradient(135deg,rgba(255,255,255,.2),rgba(150,80,255,.12),rgba(255,70,170,.1));
+backdrop-filter:blur(25px);cursor:pointer;font-size:20px;
+box-shadow:0 10px 35px rgba(0,0,0,.45),inset 0 1px 2px rgba(255,255,255,.5);transition:.3s;
+}
+.accessibility-toggle:hover{transform:scale(1.08)}
+.accessibility-panel{
+position:absolute;top:62px;left:0;width:275px;padding:20px;border-radius:25px;
+opacity:0;pointer-events:none;transform:translateY(-10px) scale(.96);transition:.3s;
+}
+.accessibility.open .accessibility-panel{opacity:1;pointer-events:auto;transform:none}
+.accessibility-title{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:15px}
+.accessibility-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:7px;margin-bottom:12px}
+.accessibility-row button,.reset-size{
+min-height:42px;border-radius:12px;border:1px solid rgba(255,255,255,.18);
+background:rgba(255,255,255,.08);color:white;cursor:pointer;font-size:13px;transition:.25s;
+}
+.accessibility-row button:hover{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.4)}
+.reset-size{width:100%;padding:10px;color:rgba(255,255,255,.75);background:rgba(255,255,255,.06)}
+
+.stats{
+position:absolute;right:25px;top:90px;width:250px;padding:20px;border-radius:25px;z-index:25
+}
+.stat{margin-bottom:15px}.stat:last-child{margin-bottom:0}
+.stat-name{display:flex;justify-content:space-between;font-size:calc(9px * var(--text-scale));letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.58);margin-bottom:7px}
+.stat-bar{height:5px;background:rgba(255,255,255,.1);border-radius:20px;overflow:hidden}
+.stat-fill{height:100%;width:0%;border-radius:inherit;transition:width .7s cubic-bezier(.2,.8,.2,1)}
+.courage{background:linear-gradient(90deg,#777,#fff)}
+.rebellion{background:linear-gradient(90deg,#8b4dff,#ff4fae)}
+.mystery{background:linear-gradient(90deg,#5350ff,#dba2ff)}
+.respect{background:linear-gradient(90deg,#63dfff,#b9ffff)}
+.risk{background:linear-gradient(90deg,#ff477e,#ff0059)}
+.status-divider{height:1px;background:rgba(255,255,255,.12);margin:15px 0}
+.qte-status{display:flex;justify-content:space-between;font-size:10px;letter-spacing:1.5px;color:rgba(255,255,255,.55)}
+.qte-success{color:#9dffcf}.qte-fail{color:#ff86ba}
+
+/* RODA */
+#punkWheel{
+position:absolute;right:10%;top:53%;width:390px;height:390px;transform:translateY(-50%);
+z-index:5;pointer-events:none;filter:drop-shadow(0 0 25px var(--accent));
+}
+.wheel-ring{position:absolute;inset:50%;border-radius:50%;transform:translate(-50%,-50%);border:1px solid rgba(255,255,255,.14)}
+.ring-one{width:100%;height:100%}.ring-two{width:82%;height:82%}.ring-three{width:62%;height:62%}
+.ring-four{width:45%;height:45%;border:2px solid var(--accent);box-shadow:0 0 25px var(--accent),inset 0 0 25px rgba(255,255,255,.1)}
+.wheel-core{
+position:absolute;left:50%;top:50%;width:150px;height:150px;transform:translate(-50%,-50%);
+border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.28),var(--accent) 22%,rgba(90,20,90,.8) 55%,rgba(0,0,0,.95) 75%);
+border:2px solid rgba(255,255,255,.55);box-shadow:0 0 35px var(--accent),0 0 90px var(--accent),inset 0 0 35px rgba(255,255,255,.3);
+}
+.wheel-core:before{content:"★";position:absolute;left:50%;top:50%;transform:translate(-50%,-55%);font-size:48px;color:white;text-shadow:0 0 12px white,0 0 30px var(--accent)}
+.wheel-core:after{content:"N.A.D.";position:absolute;left:50%;bottom:28px;transform:translateX(-50%);font-size:9px;letter-spacing:4px;color:rgba(255,255,255,.65)}
+
+.punk-symbol{
+position:absolute;color:var(--accent);fill:none;stroke:currentColor;stroke-width:2;
+filter:drop-shadow(0 0 7px var(--accent));transition:color .8s,filter .8s,transform .5s;
+}
+.symbol-skull{width:50px;top:8px;right:38px}
+.symbol-star{width:40px;bottom:42px;right:25px}
+.symbol-guitar{width:86px;left:-2px;top:130px;transform:rotate(-25deg)}
+.symbol-lightning{width:45px;left:30px;bottom:38px}
+.symbol-circle{width:36px;right:10px;top:175px}
+.symbol-x{width:32px;left:45px;top:65px}
+#punkWheel .ring-one{animation:spinWheel 30s linear infinite}
+#punkWheel .ring-two{animation:spinWheelReverse 22s linear infinite}
+#punkWheel .ring-three{animation:spinWheel 16s linear infinite}
+@keyframes spinWheel{from{transform:translate(-50%,-50%) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes spinWheelReverse{from{transform:translate(-50%,-50%) rotate(360deg)}to{transform:translate(-50%,-50%) rotate(0)}}
+
+/* HISTÓRIA */
+.story-wrapper{position:absolute;left:7vw;bottom:6vh;width:min(760px,58vw);z-index:10}
+.story-card{padding:40px;border-radius:35px;animation:cardIn .8s ease}
+@keyframes cardIn{
+from{opacity:0;transform:translateY(25px) scale(.98);filter:blur(8px)}
+to{opacity:1;transform:none;filter:blur(0)}
+}
+.location{font-size:calc(11px * var(--text-scale));text-transform:uppercase;letter-spacing:3px;color:rgba(255,255,255,.48);margin-bottom:14px}
+.story-title{font-size:calc(46px * var(--text-scale));letter-spacing:-1.7px;margin-bottom:20px}
+.story-text{color:rgba(255,255,255,.86);font-size:calc(17px * var(--text-scale));line-height:1.9;min-height:150px}
+.dialogue{color:white;font-weight:700}
+
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:25px}
+.choice{
+position:relative;padding:22px;border-radius:25px;border:1px solid rgba(255,255,255,.32);
+background:linear-gradient(135deg,rgba(255,255,255,.20),rgba(190,180,210,.08) 35%,rgba(115,65,170,.09) 65%,rgba(255,70,170,.08));
+color:white;text-align:left;cursor:pointer;overflow:hidden;backdrop-filter:blur(28px) saturate(180%);
+box-shadow:inset 0 1px 2px rgba(255,255,255,.45),0 15px 45px rgba(0,0,0,.45);
+transition:transform .45s,background .45s,box-shadow .45s;
+}
+.choice:hover{transform:translateY(-7px) scale(1.02);border-color:rgba(255,255,255,.56);background:linear-gradient(135deg,rgba(255,255,255,.28),rgba(185,145,255,.13),rgba(255,80,180,.13));box-shadow:0 25px 65px rgba(0,0,0,.55),0 0 35px rgba(145,75,255,.12)}
+.choice-number{display:block;font-size:calc(10px * var(--text-scale));color:rgba(255,255,255,.4);letter-spacing:2px;margin-bottom:9px}
+.choice-text{display:block;font-size:calc(15px * var(--text-scale));line-height:1.6;font-weight:600}
+.choice-warning{display:block;margin-top:10px;color:#ff8abf;font-size:calc(11px * var(--text-scale));line-height:1.4}
+
+/* PROGRESS */
+.progress{position:absolute;left:25px;bottom:25px;z-index:20;width:220px}
+.progress-label{display:flex;justify-content:space-between;font-size:calc(10px * var(--text-scale));letter-spacing:1px;color:rgba(255,255,255,.45);margin-bottom:8px}
+.progress-line{height:4px;border-radius:20px;background:rgba(255,255,255,.1);overflow:hidden}
+.progress-value{height:100%;width:5%;background:linear-gradient(90deg,#fff,#b68aff,#ff72b5);transition:width .7s}
+
+/* QTE */
+#qteOverlay{
+position:fixed;inset:0;z-index:150;display:none;align-items:center;justify-content:center;
+background:rgba(0,0,0,.78);backdrop-filter:blur(8px);
+}
+#qteOverlay.active{display:flex}
+.qte-card{width:min(600px,92vw);padding:45px;border-radius:35px;text-align:center;border:1px solid rgba(255,90,180,.55);box-shadow:0 0 80px rgba(255,40,160,.2),0 30px 100px rgba(0,0,0,.8)}
+.qte-small{font-size:10px;letter-spacing:4px;color:#ff76ba;margin-bottom:15px}
+.qte-title{font-size:38px;letter-spacing:-1px;margin-bottom:12px}
+.qte-description{color:rgba(255,255,255,.68);font-size:14px;line-height:1.7;margin-bottom:25px}
+.qte-timer{height:7px;border-radius:20px;background:rgba(255,255,255,.1);overflow:hidden;margin-bottom:25px}
+#qteTimerBar{height:100%;width:100%;background:linear-gradient(90deg,#fff,#ff6bb8,#ff174f);transform-origin:left;transition:width .05s linear}
+.qte-button{
+width:170px;height:70px;border-radius:22px;border:1px solid rgba(255,255,255,.6);color:white;
+background:radial-gradient(circle,rgba(255,255,255,.3),rgba(255,40,160,.2));
+box-shadow:0 0 35px rgba(255,50,180,.25),inset 0 1px 2px rgba(255,255,255,.6);
+font-size:16px;font-weight:800;letter-spacing:3px;cursor:pointer;transition:.2s;
+}
+.qte-button:hover{transform:scale(1.06);box-shadow:0 0 60px rgba(255,50,180,.45)}
+.qte-button:active{transform:scale(.94)}
+
+/* QTE MIRA */
+#aimArea{
+display:none;position:relative;width:min(500px,80vw);height:260px;margin:0 auto 25px;
+border:1px solid rgba(255,255,255,.22);border-radius:25px;
+background:radial-gradient(circle at 50% 50%,rgba(255,40,160,.1),rgba(0,0,0,.55));
+overflow:hidden;cursor:crosshair;
+}
+#aimArea.active{display:block}
+.aim-grid{
+position:absolute;inset:0;
+background-image:linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px);
+background-size:40px 40px;
+}
+#aimTarget{
+position:absolute;width:58px;height:58px;border-radius:50%;
+border:2px solid #ff66ba;box-shadow:0 0 25px #ff3ba9, inset 0 0 15px rgba(255,255,255,.2);
+transform:translate(-50%,-50%);left:50%;top:50%;
+}
+#aimTarget:before,#aimTarget:after{content:"";position:absolute;left:50%;top:50%;background:#ffb5dc}
+#aimTarget:before{width:80px;height:1px;transform:translate(-50%,-50%)}
+#aimTarget:after{height:80px;width:1px;transform:translate(-50%,-50%)}
+.aim-instruction{font-size:12px;color:#ff9dcc;letter-spacing:2px;margin-bottom:12px}
+
+/* FEEDBACK */
+#qteFeedback{position:fixed;inset:0;z-index:180;display:none;align-items:center;justify-content:center;pointer-events:none}
+#qteFeedback.show{display:flex}
+.qte-feedback-text{font-size:clamp(50px,9vw,100px);font-weight:800;text-transform:uppercase;letter-spacing:-5px;animation:feedbackPop .65s ease forwards}
+.feedback-success{color:#ff77bd;text-shadow:0 0 20px #ff38a8,0 0 70px #ff168d}
+.feedback-fail{color:#777;text-shadow:0 0 20px #ff174f}
+@keyframes feedbackPop{
+0%{opacity:0;transform:scale(.4) rotate(-5deg)}
+50%{opacity:1;transform:scale(1.15) rotate(2deg)}
+100%{opacity:0;transform:scale(1.5)}
+}
+
+/* CONQUISTAS */
+#achievementContainer{position:fixed;right:25px;bottom:30px;z-index:200;width:370px;pointer-events:none}
+.achievement{
+position:relative;display:grid;grid-template-columns:65px 1fr;gap:15px;align-items:center;padding:18px;border-radius:25px;margin-top:12px;
+transform:translateX(120%);opacity:0;transition:transform .6s cubic-bezier(.2,.8,.2,1),opacity .6s;
+}
+.achievement.show{transform:translateX(0);opacity:1}
+.trophy{width:58px;height:58px;display:flex;align-items:center;justify-content:center;border-radius:18px;font-size:30px;background:linear-gradient(135deg,rgba(255,255,255,.25),rgba(168,95,255,.18),rgba(255,80,175,.16));border:1px solid rgba(255,255,255,.3);box-shadow:0 0 30px rgba(185,90,255,.15),inset 0 1px 2px rgba(255,255,255,.5)}
+.achievement-small{font-size:calc(9px * var(--text-scale));letter-spacing:2px;text-transform:uppercase;color:#c8a8ff;margin-bottom:4px}
+.achievement-title{font-size:calc(15px * var(--text-scale));font-weight:800;margin-bottom:5px}
+.achievement-choice{font-size:calc(11px * var(--text-scale));line-height:1.4;color:rgba(255,255,255,.7)}
+.achievement-consequence{margin-top:8px;font-size:calc(11px * var(--text-scale));color:rgba(255,255,255,.82)}
+.positive{color:#a7ffcb}.negative{color:#ff8dbd}
+
+/* BATALHA */
+#battleOverlay{
+position:fixed;inset:0;z-index:140;display:none;align-items:center;justify-content:center;
+background:rgba(2,0,8,.9);backdrop-filter:blur(5px);
+}
+#battleOverlay.active{display:flex}
+.battle-card{
+position:relative;width:min(900px,94vw);min-height:620px;border-radius:35px;padding:30px;
+overflow:hidden;
+background:linear-gradient(145deg,rgba(30,15,45,.94),rgba(5,5,12,.96));
+border:1px solid rgba(255,255,255,.28);
+box-shadow:0 30px 120px rgba(0,0,0,.9),0 0 70px rgba(255,30,160,.12);
+}
+.battle-bg{
+position:absolute;inset:0;pointer-events:none;
+background:
+radial-gradient(circle at 75% 28%,rgba(255,50,170,.15),transparent 18%),
+linear-gradient(180deg,transparent 40%,rgba(0,0,0,.8));
+}
+.enemy-shadow{
+position:absolute;right:11%;top:14%;width:230px;height:330px;opacity:.82;
+filter:drop-shadow(0 0 30px rgba(255,30,150,.35));
+}
+.enemy-shadow:before{
+content:"";position:absolute;left:58px;top:25px;width:120px;height:120px;border-radius:50%;
+background:#030305;box-shadow:0 0 35px rgba(0,0,0,.9);
+}
+.enemy-shadow:after{
+content:"";position:absolute;left:35px;top:120px;width:170px;height:190px;
+background:#030305;clip-path:polygon(30% 0,70% 0,100% 100%,0 100%);
+}
+.enemy-eyes{
+position:absolute;z-index:2;top:75px;left:87px;display:flex;gap:35px;
+}
+.enemy-eyes span{width:12px;height:7px;background:#ff4db0;border-radius:50%;box-shadow:0 0 15px #ff178d}
+.battle-label{position:relative;z-index:4;font-size:10px;letter-spacing:4px;color:#ff76ba}
+.battle-enemy-name{position:relative;z-index:4;margin-top:8px;font-size:28px;font-weight:800}
+.hp-box{position:relative;z-index:4;width:300px;padding:14px 18px;border-radius:18px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.18);margin-top:12px}
+.hp-name{display:flex;justify-content:space-between;font-size:11px;letter-spacing:1px;margin-bottom:8px}
+.hp-bar{height:9px;border-radius:20px;background:rgba(255,255,255,.12);overflow:hidden}
+.hp-fill{height:100%;background:linear-gradient(90deg,#ff355f,#ff75ba);transition:width .35s}
+.player-battle{
+position:absolute;left:55px;bottom:170px;z-index:4;
+}
+.player-icon{
+width:115px;height:115px;border-radius:50%;border:2px solid rgba(255,255,255,.3);
+background:radial-gradient(circle at 35% 30%,#ddd,#444 35%,#111 70%);
+box-shadow:0 0 35px rgba(255,255,255,.12);
+display:flex;align-items:center;justify-content:center;font-size:45px;
+}
+.battle-log{
+position:absolute;left:30px;right:30px;bottom:25px;z-index:5;
+min-height:105px;padding:18px 20px;border-radius:22px;background:rgba(0,0,0,.68);border:1px solid rgba(255,255,255,.18);
+}
+#battleMessage{font-size:14px;line-height:1.5;color:rgba(255,255,255,.8);margin-bottom:12px}
+.battle-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.battle-btn{
+padding:14px;border-radius:15px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);
+color:#fff;cursor:pointer;font-weight:800;letter-spacing:1px;transition:.25s;
+}
+.battle-btn:hover{background:rgba(255,60,180,.2);transform:translateY(-2px)}
+.battle-attacks{display:none;grid-template-columns:1fr 1fr;gap:10px}
+.battle-attacks.active{display:grid}
+.battle-main-actions.hidden{display:none}
+.battle-result{position:absolute;inset:0;z-index:20;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.75);text-align:center}
+.battle-result.active{display:flex}
+.battle-result-box{padding:45px;border-radius:30px;width:min(520px,90vw)}
+.battle-result-title{font-size:48px;margin-bottom:15px}
+.battle-result-text{color:rgba(255,255,255,.7);line-height:1.7}
+
+/* TRANSIÇÃO */
+#transition{position:fixed;inset:0;z-index:90;background:#000;opacity:0;pointer-events:none;transition:opacity .45s}
+#transition.active{opacity:1}
+
+/* FINAL */
+#ending{
+position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;padding:25px;background:rgba(0,0,0,.78);
+}
+#ending.active{display:flex}
+.ending-card{width:min(800px,94vw);padding:65px;text-align:center;border-radius:42px}
+.ending-label{color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:4px;font-size:calc(11px * var(--text-scale));margin-bottom:20px}
+.ending-title{
+font-size:calc(75px * var(--text-scale));letter-spacing:-4px;margin-bottom:25px;
+background:linear-gradient(100deg,white,#c6a4ff,#ff86bd,white);-webkit-background-clip:text;color:transparent;
+}
+.ending-text{color:rgba(255,255,255,.75);font-size:calc(17px * var(--text-scale));line-height:1.9;margin-bottom:35px}
+.ending-buttons{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+.continue-btn{
+border:1px solid rgba(255,100,190,.55);color:white;background:linear-gradient(135deg,rgba(255,70,170,.25),rgba(150,70,255,.18));
+padding:17px 30px;border-radius:999px;font-weight:800;cursor:pointer;transition:.3s;
+}
+.continue-btn:hover{transform:translateY(-3px);box-shadow:0 0 35px rgba(255,50,180,.25)}
+
+@media(max-width:1100px){
+#punkWheel{right:1%;opacity:.45;transform:translateY(-50%) scale(.8)}
+.story-wrapper{width:min(700px,65vw)}
+}
+@media(max-width:800px){
+body{overflow:auto}.intro-card{padding:50px 25px}.logo{letter-spacing:-4px}
+.topbar{top:15px;left:15px;right:15px}
+.stats{top:75px;right:15px;width:185px}.accessibility{top:75px;left:15px}
+#punkWheel{width:280px;height:280px;top:48%;right:-80px;opacity:.18}
+.story-wrapper{left:15px;right:15px;bottom:15px;width:auto}.story-card{padding:25px}
+.story-title{font-size:calc(32px * var(--text-scale))}.story-text{min-height:0}
+.choices{grid-template-columns:1fr}.progress{display:none}
+#achievementContainer{left:15px;right:15px;bottom:15px;width:auto}
+.qte-card{padding:30px 20px}.qte-title{font-size:30px}
+.battle-card{min-height:560px}.enemy-shadow{right:-10px;transform:scale(.75);transform-origin:top right}
+.player-battle{left:25px;bottom:180px}.battle-log{left:15px;right:15px}
+.ending-card{padding:35px 20px}.ending-title{font-size:50px}
+}
+</style>
+</head>
+
+<body>
+
+<div id="background"></div>
+<div id="noise"></div>
+<div id="transition"></div>
+
+<section id="intro">
+<div class="intro-card glass">
+<div class="eyebrow">INTERACTIVE NARRATIVE</div>
+<h1 class="logo">NEON<br>AFTER DARK</h1>
+<p class="intro-description">
+Algumas escolhas mudam uma noite. Outras mudam uma vida.
+Entre música, neon, segredos, batalhas e ruas que nunca dormem,
+você vai decidir o destino de Jax.
+</p>
+<button class="start-btn" onclick="startGame()">COMEÇAR HISTÓRIA →</button>
+</div>
+</section>
+
+<main id="game">
+
+<header class="topbar">
+<div class="brand glass">NEON AFTER DARK</div>
+<div id="chapter" class="chapter glass">PARTE 1 / 20</div>
+</header>
+
+<div id="accessibility" class="accessibility">
+<button class="accessibility-toggle" onclick="toggleAccessibility()">Aa</button>
+<div class="accessibility-panel glass">
+<div class="accessibility-title">TAMANHO E ZOOM</div>
+<div class="accessibility-row">
+<button onclick="changeTextSize(-2)">A−</button>
+<button onclick="changeTextSize(-1)">A</button>
+<button onclick="changeTextSize(1)">A+</button>
+<button onclick="changeTextSize(2)">A++</button>
+</div>
+<div class="accessibility-row">
+<button onclick="changeZoom(-1)">−</button>
+<button onclick="changeZoom(0)">100%</button>
+<button onclick="changeZoom(1)">+</button>
+<button onclick="changeZoom(2)">++</button>
+</div>
+<button class="reset-size" onclick="resetAccessibility()">Restaurar tamanho</button>
+</div>
+</div>
+
+<aside class="stats glass">
+<div class="stat"><div class="stat-name"><span>CORAGEM</span><span id="courageNumber">0</span></div><div class="stat-bar"><div id="courageBar" class="stat-fill courage"></div></div></div>
+<div class="stat"><div class="stat-name"><span>REBELDIA</span><span id="rebellionNumber">0</span></div><div class="stat-bar"><div id="rebellionBar" class="stat-fill rebellion"></div></div></div>
+<div class="stat"><div class="stat-name"><span>MISTÉRIO</span><span id="mysteryNumber">0</span></div><div class="stat-bar"><div id="mysteryBar" class="stat-fill mystery"></div></div></div>
+<div class="stat"><div class="stat-name"><span>RESPEITO</span><span id="respectNumber">0</span></div><div class="stat-bar"><div id="respectBar" class="stat-fill respect"></div></div></div>
+<div class="stat"><div class="stat-name"><span>RISCO</span><span id="riskNumber">0</span></div><div class="stat-bar"><div id="riskBar" class="stat-fill risk"></div></div></div>
+<div class="status-divider"></div>
+<div class="qte-status"><span>QTE ACERTOS</span><span id="qteSuccessNumber" class="qte-success">0</span></div>
+<div class="qte-status"><span>QTE FALHAS</span><span id="qteFailNumber" class="qte-fail">0</span></div>
+</aside>
+
+<div id="punkWheel">
+
+<div class="wheel-ring ring-one"></div>
+<div class="wheel-ring ring-two"></div>
+<div class="wheel-ring ring-three"></div>
+<div class="wheel-ring ring-four"></div>
+
+<!-- GUITARRA REDESENHADA -->
+<svg class="punk-symbol symbol-guitar" viewBox="0 0 120 170">
+<path d="M48 8 L72 8 L72 65
+C88 72 96 84 91 99
+C87 113 74 120 61 115
+L59 145
+L73 159
+L64 167
+L51 151
+L38 167
+L29 159
+L43 145
+L41 115
+C27 120 14 112 10 98
+C6 84 15 71 30 65
+L30 8 Z"
+fill="rgba(255,70,180,.08)"/>
+<path d="M50 8 L70 8 L70 68 L50 68 Z"/>
+<path d="M50 25 L70 25 M50 37 L70 37 M50 49 L70 49 M50 61 L70 61"/>
+<circle cx="50" cy="91" r="23"/>
+<circle cx="50" cy="91" r="9"/>
+<path d="M50 114 L50 153"/>
+<path d="M43 91 L57 91"/>
+</svg>
+
+<svg class="punk-symbol symbol-skull" viewBox="0 0 100 100">
+<path d="M20 48C20 20 38 8 50 8C68 8 82 22 82 48C82 61 75 68 66 73V88H56V76H44V88H34V73C25 68 20 59 20 48Z"/>
+<circle cx="38" cy="45" r="7"/><circle cx="62" cy="45" r="7"/>
+<path d="M43 60L50 66L57 60"/>
+</svg>
+
+<svg class="punk-symbol symbol-star" viewBox="0 0 100 100">
+<path d="M50 5L61 37L95 38L68 58L78 92L50 72L22 92L32 58L5 38L39 37Z"/>
+</svg>
+
+<svg class="punk-symbol symbol-lightning" viewBox="0 0 100 120">
+<path d="M62 5L15 63H48L38 115L88 48H56Z"/>
+</svg>
+
+<svg class="punk-symbol symbol-circle" viewBox="0 0 100 100">
+<circle cx="50" cy="50" r="38"/><circle cx="50" cy="50" r="8"/>
+</svg>
+
+<svg class="punk-symbol symbol-x" viewBox="0 0 100 100">
+<path d="M15 15L85 85M85 15L15 85"/>
+</svg>
+
+<div class="wheel-core"></div>
+</div>
+
+<section class="story-wrapper">
+<article id="storyCard" class="story-card glass">
+<div id="location" class="location">CIDADE</div>
+<h2 id="storyTitle" class="story-title">...</h2>
+<div id="storyText" class="story-text">...</div>
+<div id="choices" class="choices"></div>
+</article>
+</section>
+
+<div class="progress">
+<div class="progress-label"><span>JORNADA</span><span id="progressText">1 / 20</span></div>
+<div class="progress-line"><div id="progressValue" class="progress-value"></div></div>
+</div>
+
+</main>
+
+<div id="achievementContainer"></div>
+
+<!-- QTE -->
+<div id="qteOverlay">
+<div class="qte-card glass">
+<div id="qteType" class="qte-small">QUICK TIME EVENT</div>
+<h2 id="qteTitle" class="qte-title">AGORA!</h2>
+<p id="qteDescription" class="qte-description">Clique antes que o tempo acabe.</p>
+
+<div class="qte-timer"><div id="qteTimerBar"></div></div>
+
+<div id="aimArea">
+<div class="aim-grid"></div>
+<div id="aimTarget"></div>
+</div>
+
+<button id="qteButton" class="qte-button" onclick="hitQTE()">CLIQUE!</button>
+</div>
+</div>
+
+<div id="qteFeedback">
+<div id="qteFeedbackText" class="qte-feedback-text">ACERTO!</div>
+</div>
+
+<!-- BATALHA -->
+<div id="battleOverlay">
+<div class="battle-card">
+
+<div class="battle-bg"></div>
+
+<div class="battle-label">ENCONTRO HOSTIL</div>
+<div id="battleEnemyName" class="battle-enemy-name">OPONENTE</div>
+
+<div class="hp-box">
+<div class="hp-name"><span>INIMIGO</span><span id="enemyHpText">100 / 100</span></div>
+<div class="hp-bar"><div id="enemyHpBar" class="hp-fill" style="width:100%"></div></div>
+</div>
+
+<div class="enemy-shadow">
+<div class="enemy-eyes"><span></span><span></span></div>
+</div>
+
+<div class="player-battle">
+<div class="player-icon">★</div>
+<div class="hp-box">
+<div class="hp-name"><span>JAX</span><span id="playerHpText">100 / 100</span></div>
+<div class="hp-bar"><div id="playerHpBar" class="hp-fill" style="width:100%"></div></div>
+</div>
+</div>
+
+<div class="battle-log">
+<div id="battleMessage">Uma sombra bloqueia seu caminho.</div>
+
+<div id="battleMainActions" class="battle-actions battle-main-actions">
+<button class="battle-btn" onclick="openAttacks()">⚔ ATACAR</button>
+<button class="battle-btn" onclick="fleeBattle()">↪ FUGIR</button>
+</div>
+
+<div id="battleAttacks" class="battle-attacks">
+<button class="battle-btn" onclick="battleAttack(0)">⚡ GOLPE NEON</button>
+<button class="battle-btn" onclick="battleAttack(1)">🎸 CORDA DE AÇO</button>
+</div>
+</div>
+
+<div id="battleResult" class="battle-result">
+<div class="battle-result-box glass">
+<div id="battleResultTitle" class="battle-result-title">VITÓRIA</div>
+<div id="battleResultText" class="battle-result-text"></div>
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- FINAL -->
+<section id="ending">
+<div class="ending-card glass">
+<div class="ending-label">FIM / CONTINUAÇÃO</div>
+<h2 id="endingTitle" class="ending-title">...</h2>
+<p id="endingText" class="ending-text">...</p>
+<div class="ending-buttons">
+<button id="continueBtn" class="continue-btn" onclick="continueStory()" style="display:none">CONTINUAR HISTÓRIA →</button>
+<button class="restart" onclick="restartGame()">JOGAR NOVAMENTE</button>
+</div>
+</div>
+</section>
+
+<script>
+
+/* =========================================================
+   HISTÓRIA — 20 PARTES
+========================================================= */
+
+const story = {
+
+1:{
+location:"DISTRITO NEON — 02:13 AM",
+title:"A cidade nunca dorme",
+text:`A chuva transformava o asfalto em um espelho prateado sob as luzes da cidade.
+<br><br><span class="dialogue">"Essa cidade só parece viva quando está prestes a morrer."</span>
+<br><br>Jax puxou a gola da jaqueta, colocou os fones e atravessou a rua.
+Aos 24 anos, ele já tinha abandonado empregos, bandas, relacionamentos e qualquer coisa que parecesse uma tentativa de dizer como ele deveria viver.
+<br><br>Naquela noite, porém, alguém estava esperando por ele.`,
+choices:[
+{text:"Seguir a pessoa misteriosa pelo beco.",achievement:"CURIOSO DEMAIS",consequence:"Jax encontra uma pista.",penalty:"-1 Coragem",effects:{courage:-1,rebellion:2,mystery:1,risk:2},next:2},
+{text:"Ignorar e ir para o show underground.",achievement:"SEM MEDO DO BARULHO",consequence:"Jax conhece possíveis aliados.",penalty:"-1 Mistério",effects:{courage:1,rebellion:1,mystery:-1,respect:1},next:2}
+]},
+
+2:{
+location:"BECO 17 — DISTRITO INDUSTRIAL",
+title:"A mensagem",
+text:`O beco cheirava a chuva, gasolina e concreto molhado.
+<br><br>Encostada contra uma porta enferrujada havia uma garota segurando um pequeno dispositivo preto.
+<br><br><span class="dialogue">"Você é o Jax?"</span>
+<br><br>Ela colocou o dispositivo na mão dele.
+<br><br>"Se você abrir isso, não existe volta."`,
+choices:[
+{text:"Abrir o dispositivo.",achievement:"NÃO EXISTE VOLTA",consequence:"Jax descobre informações secretas.",penalty:"+2 Risco",effects:{mystery:3,courage:-1,risk:2},next:3},
+{text:"Devolver e exigir respostas.",achievement:"NÃO CONFIO EM NINGUÉM",consequence:"A garota revela parte da verdade.",penalty:"Perde uma pista.",effects:{rebellion:2,courage:1,mystery:-1,respect:2},next:3}
+]},
+
+3:{
+location:"CLUBE STATIC — 03:02 AM",
+title:"Som alto, problemas maiores",
+text:`O baixo fazia o chão vibrar.
+<br><br>Luzes vermelhas cortavam a fumaça enquanto uma banda punk tocava no palco.
+<br><br>Jax percebeu que três pessoas estavam observando ele.
+<br><br><span class="dialogue">"ELES ESTÃO AQUI."</span>`,
+choices:[
+{text:"Confrontar quem está observando.",achievement:"OLHOS NOS OLHOS",consequence:"Jax encara os perseguidores.",penalty:"Reação rápida necessária.",effects:{courage:2,rebellion:2,respect:2,risk:2},next:4,qte:{type:"reaction",title:"ELES ESTÃO CHEGANDO",description:"Clique antes que o segurança alcance Jax.",time:2200}},
+{text:"Seguir discretamente para os fundos.",achievement:"SOMBRAS",consequence:"Jax entra no backstage sem ser visto.",penalty:"-1 Coragem",effects:{mystery:2,courage:-1},next:4}
+]},
+
+4:{
+location:"BACKSTAGE",
+title:"A verdade começa a aparecer",
+text:`Atrás do palco havia uma sala abandonada.
+<br><br>Fotografias cobriam uma parede.
+<br><br>Pessoas desaparecidas. Músicos. Jornalistas. Ativistas.
+<br><br>Todos tinham uma coisa em comum.
+<br><br>Eles tinham descoberto alguma coisa sobre a cidade.
+<br><br>No centro da parede havia uma fotografia antiga.
+<br><br>Era o pai de Jax.`,
+choices:[
+{text:"Investigar a fotografia.",achievement:"SANGUE DO PASSADO",consequence:"Jax encontra uma mensagem deixada pelo pai.",penalty:"A descoberta abala Jax.",effects:{mystery:3,courage:-1,respect:1},next:5},
+{text:"Arrancar a fotografia e fugir.",achievement:"QUEIMANDO O PASSADO",consequence:"Jax impede que outros encontrem a foto.",penalty:"-2 Mistério",effects:{rebellion:3,mystery:-2,risk:1},next:5}
+]},
+
+5:{
+location:"SUBSOLO — 04:17 AM",
+title:"O segredo",
+text:`Uma passagem escondida levava para baixo da cidade.
+<br><br>Jax encontrou servidores, arquivos e dezenas de telas.
+<br><br>Aquela cidade estava sendo monitorada.
+<br><br>Cada câmera. Cada celular. Cada movimento.
+<br><br>E o projeto tinha um nome:
+<br><br><span class="dialogue">"GLASS."</span>`,
+choices:[
+{text:"Copiar todos os arquivos.",achievement:"ARQUIVO PROIBIDO",consequence:"Jax copia parte da verdade.",penalty:"O sistema detecta a cópia.",effects:{mystery:3,courage:-1,risk:3},next:6,qte:{type:"timing",title:"SISTEMA BLOQUEANDO",description:"Aperte quando o marcador entrar na zona de acerto.",time:2500}},
+{text:"Destruir o sistema.",achievement:"QUEBRANDO O GLASS",consequence:"O sistema começa a cair.",penalty:"Perde informações.",effects:{rebellion:3,courage:2,mystery:-2,risk:3,respect:1},next:6}
+]},
+
+6:{
+location:"CIDADE VELHA — CHUVA",
+title:"Agora eles sabem",
+text:`Sirenes começaram a aparecer ao longe.
+<br><br>Jax correu pelas ruas enquanto a chuva caía cada vez mais forte.
+<br><br>O telefone vibrou.
+<br><br><span class="dialogue">"Você não deveria ter encontrado isso."</span>`,
+choices:[
+{text:"Voltar para enfrentar quem está atrás dele.",achievement:"SEM FUGA",consequence:"Jax encara os perseguidores.",penalty:"+3 Risco",effects:{courage:3,rebellion:1,respect:2,risk:3},next:7,battle:{enemy:"CAÇADOR DO GLASS",hp:100}},
+{text:"Fugir da cidade.",achievement:"DESAPARECER",consequence:"Jax escapa temporariamente.",penalty:"Abandona aliados.",effects:{rebellion:-2,mystery:2,risk:-1},next:7}
+]},
+
+7:{
+location:"TORRE CENTRAL",
+title:"O homem por trás de tudo",
+text:`No topo da torre, Jax finalmente descobriu quem estava por trás do projeto.
+<br><br>O diretor do sistema era um antigo amigo de seu pai.
+<br><br>Ele revelou que o pai de Jax não desapareceu.
+<br><br>Ele havia escolhido desaparecer para proteger o filho.`,
+choices:[
+{text:"Exigir a verdade completa.",achievement:"A VERDADE CUSTA CARO",consequence:"Jax descobre o que aconteceu com seu pai.",penalty:"A verdade destrói parte de sua confiança.",effects:{mystery:3,courage:1,respect:2},next:8},
+{text:"Partir para o confronto.",achievement:"PUNK ATÉ O FIM",consequence:"Jax derruba o diretor.",penalty:"+3 Risco",effects:{courage:3,rebellion:2,risk:3},next:8,battle:{enemy:"DIRETOR VANT",hp:130}}
+]},
+
+8:{
+location:"TORRE CENTRAL — 05:42 AM",
+title:"Sem volta",
+text:`O alarme começou a tocar.
+<br><br>A cidade inteira estava prestes a descobrir o que acontecia nos bastidores.
+<br><br>Jax segurava o arquivo final.
+<br><br>Bastava apertar um botão.
+<br><br>Mas fazer isso colocaria milhares de pessoas em perigo.`,
+choices:[
+{text:"Publicar tudo para a cidade.",achievement:"VERDADE ABSOLUTA",consequence:"Todos descobrem a existência do GLASS.",penalty:"A cidade entra em caos.",effects:{rebellion:3,respect:2,risk:3},next:9,qte:{type:"aim",title:"TRANSMISSÃO FINAL",description:"Aponte e acerte o núcleo do transmissor.",time:5000}},
+{text:"Apagar parte dos arquivos e proteger inocentes.",achievement:"O HERÓI IMPERFEITO",consequence:"Jax protege milhares de pessoas.",penalty:"Algumas provas desaparecem.",effects:{courage:3,mystery:-2,respect:3,risk:-1},next:9}
+]},
+
+9:{
+location:"CIDADE — AMANHECER",
+title:"A última noite",
+text:`O amanhecer começava a aparecer atrás dos prédios.
+<br><br>Jax estava no terraço onde tudo havia começado.
+<br><br>A cidade abaixo dele parecia diferente.
+<br><br>Talvez porque agora ele soubesse a verdade.
+<br><br>Talvez porque finalmente tivesse escolhido o próprio caminho.`,
+choices:[
+{text:"Ficar e lutar pela cidade.",achievement:"ÚLTIMA RESISTÊNCIA",consequence:"Jax decide ajudar a reconstruir.",penalty:"Não poderá desaparecer.",effects:{courage:2,rebellion:2,respect:3},next:10},
+{text:"Desaparecer antes que encontrem você.",achievement:"LENDA URBANA",consequence:"Jax vira uma história das ruas.",penalty:"Deixa aliados para trás.",effects:{mystery:3,rebellion:-2,risk:-2},next:10}
+]},
+
+10:{
+location:"DEPOIS DA TEMPESTADE",
+title:"O que vem depois?",
+text:`A noite acabou.
+<br><br>Mas algumas histórias não terminam quando o sol nasce.
+<br><br>Jax olhou uma última vez para a cidade.
+<br><br>E percebeu que talvez liberdade nunca tivesse sido sobre fugir.
+<br><br>Talvez fosse simplesmente escolher quem você quer ser.`,
+choices:[
+{text:"Aceitar o destino e ficar.",achievement:"O ÚLTIMO CAPÍTULO",consequence:"Jax aceita seu papel na nova cidade.",penalty:"A responsabilidade fica sobre seus ombros.",effects:{courage:2,respect:2},next:"ending"},
+{text:"Desaparecer nas ruas.",achievement:"NUNCA SER ENCONTRADO",consequence:"Jax desaparece completamente.",penalty:"Ninguém saberá toda a verdade.",effects:{mystery:2,courage:-1,risk:-2},next:"ending"}
+]},
+
+/* =========================================================
+   CONTINUAÇÃO — PARTES 11 A 20
+========================================================= */
+
+11:{
+location:"DISTRITO ZERO — 11:47 PM",
+title:"O sinal que voltou",
+text:`Três semanas depois, a cidade acreditava que o GLASS estava morto.
+<br><br>Jax não acreditava.
+<br><br>Em uma estação abandonada, um rádio antigo começou a transmitir uma frequência impossível.
+<br><br><span class="dialogue">"JAX. SE VOCÊ ESTÁ OUVINDO, SEU PAI ESTÁ VIVO."</span>
+<br><br>Então a transmissão mudou para uma coordenada.`,
+choices:[
+{text:"Seguir a coordenada.",achievement:"SEGUNDA NOITE",consequence:"Jax encontra uma entrada subterrânea.",penalty:"+2 Risco",effects:{courage:2,mystery:2,risk:2},next:12},
+{text:"Destruir o rádio.",achievement:"NÃO ACREDITO EM FANTASMAS",consequence:"Jax tenta abandonar o passado.",penalty:"Perde uma pista.",effects:{mystery:-2,risk:-1,rebellion:2},next:12}
+]},
+
+12:{
+location:"METRÔ ABANDONADO",
+title:"A cidade debaixo da cidade",
+text:`Os túneis antigos escondiam uma segunda rede.
+<br><br>Não era GLASS.
+<br><br>Era algo maior.
+<br><br>Centenas de monitores mostravam cidades diferentes.
+<br><br>Nova York. São Paulo. Tóquio. Berlim.
+<br><br><span class="dialogue">"GLASS era apenas um protótipo."</span>`,
+choices:[
+{text:"Explorar os servidores.",achievement:"O SEGUNDO SISTEMA",consequence:"Jax descobre o projeto NIGHTFALL.",penalty:"+3 Risco",effects:{mystery:4,risk:3},next:13,qte:{type:"timing",title:"DESCRIPTOGRAFIA",description:"Aperte no momento certo para quebrar a criptografia.",time:2800}},
+{text:"Procurar seu pai.",achievement:"SANGUE PRIMEIRO",consequence:"Jax encontra uma gravação recente.",penalty:"Perde dados importantes.",effects:{courage:3,mystery:1,respect:2},next:13}
+]},
+
+13:{
+location:"ESTAÇÃO 09",
+title:"O homem na tela",
+text:`Uma tela acendeu.
+<br><br>Um homem apareceu.
+<br><br>Jax reconheceu imediatamente aquela voz.
+<br><br><span class="dialogue">"Filho... eu sabia que você viria."</span>
+<br><br>Seu pai estava vivo.
+<br><br>Mas estava preso dentro do sistema NIGHTFALL.`,
+choices:[
+{text:"Tentar libertá-lo.",achievement:"PAI",consequence:"Jax decide invadir o núcleo.",penalty:"Extremo perigo.",effects:{courage:3,respect:2,risk:3},next:14,battle:{enemy:"GUARDIÃO NIGHTFALL",hp:120}},
+{text:"Perguntar por que ele abandonou Jax.",achievement:"FERIDAS ANTIGAS",consequence:"Seu pai revela a verdadeira origem do projeto.",penalty:"A resposta aumenta o mistério.",effects:{mystery:4,courage:-1,respect:1},next:14}
+]},
+
+14:{
+location:"NIGHTFALL — NÚCLEO",
+title:"A máquina",
+text:`O núcleo parecia uma cidade construída dentro de outra cidade.
+<br><br>Milhares de identidades flutuavam em telas.
+<br><br>NIGHTFALL não observava pessoas.
+<br><br>Ele previa decisões.
+<br><br>Escolhas antes mesmo de acontecerem.
+<br><br>O sistema queria controlar o futuro.`,
+choices:[
+{text:"Atacar o núcleo.",achievement:"QUEBRAR O FUTURO",consequence:"Jax começa a destruir a máquina.",penalty:"+4 Risco",effects:{rebellion:4,courage:2,risk:4},next:15,qte:{type:"aim",title:"TIRO NO NÚCLEO",description:"Mire no núcleo vermelho e acerte antes que ele mude de posição.",time:5500}},
+{text:"Copiar o código.",achievement:"ROUBAR O FUTURO",consequence:"Jax captura parte do algoritmo.",penalty:"O sistema percebe você.",effects:{mystery:4,risk:3},next:15,qte:{type:"reaction",title:"FUGA DO SISTEMA",description:"Clique repetidamente antes que o bloqueio feche.",time:2500}}
+]},
+
+15:{
+location:"TORRE NIGHTFALL",
+title:"A cidade contra você",
+text:`As ruas estavam cheias.
+<br><br>Pessoas que nunca tinham se conhecido estavam sendo manipuladas pelo sistema.
+<br><br>Jax percebeu que não podia enfrentar aquilo sozinho.
+<br><br>Então ouviu música.
+<br><br>A banda do Static estava na rua.
+<br><br>Seus antigos aliados haviam voltado.`,
+choices:[
+{text:"Reunir a resistência.",achievement:"A BANDA VOLTOU",consequence:"Uma resistência nasce nas ruas.",penalty:"+2 Risco",effects:{respect:4,rebellion:3,risk:2},next:16},
+{text:"Trabalhar sozinho.",achievement:"LOBO SOLITÁRIO",consequence:"Jax evita colocar seus amigos em perigo.",penalty:"-2 Respeito",effects:{courage:3,mystery:2,respect:-2},next:16}
+]},
+
+16:{
+location:"PRAÇA CENTRAL",
+title:"A batalha pela cidade",
+text:`O exército particular de NIGHTFALL chegou.
+<br><br>As luzes da cidade ficaram vermelhas.
+<br><br>Jax olhou para seus aliados.
+<br><br><span class="dialogue">"Essa é a nossa última chance."</span>
+<br><br>Uma figura enorme surgiu entre a fumaça.`,
+choices:[
+{text:"Ficar e lutar.",achievement:"LINHA DE FRENTE",consequence:"Jax enfrenta o comandante.",penalty:"A batalha será brutal.",effects:{courage:3,respect:3,risk:4},next:17,battle:{enemy:"COMANDANTE VANTA",hp:160}},
+{text:"Evacuar os civis.",achievement:"NENHUM INOCENTE",consequence:"Jax salva centenas de pessoas.",penalty:"O inimigo ganha tempo.",effects:{respect:5,courage:2,risk:1},next:17}
+]},
+
+17:{
+location:"NIGHTFALL — CÂMARA FINAL",
+title:"A escolha impossível",
+text:`Jax finalmente chegou ao coração do sistema.
+<br><br>Seu pai estava conectado à máquina.
+<br><br>Para destruir NIGHTFALL, seria necessário desligá-lo também.
+<br><br><span class="dialogue">"Não pense em mim. Salve a cidade."</span>`,
+choices:[
+{text:"Destruir o sistema.",achievement:"LIBERDADE",consequence:"NIGHTFALL começa a morrer.",penalty:"Seu pai pode morrer.",effects:{rebellion:4,courage:4,risk:4},next:18,qte:{type:"timing",title:"DESLIGAMENTO",description:"Desligue os três pontos do núcleo no momento correto.",time:4500}},
+{text:"Salvar seu pai.",achievement:"SANGUE É MAIS FORTE",consequence:"Jax tira seu pai do sistema.",penalty:"NIGHTFALL continua ativo.",effects:{respect:5,courage:2,mystery:2,risk:2},next:18}
+]},
+
+18:{
+location:"CIDADE — 04:44 AM",
+title:"Depois da guerra",
+text:`A cidade sobreviveu.
+<br><br>Mas nada voltou ao normal.
+<br><br>Algumas pessoas chamavam Jax de criminoso.
+<br><br>Outras chamavam de herói.
+<br><br>Nas paredes surgiu um novo símbolo.
+<br><br>Uma guitarra atravessada por um raio.`,
+choices:[
+{text:"Assumir o símbolo.",achievement:"NOVA LENDA",consequence:"Jax aceita liderar a resistência.",penalty:"Agora todos conhecem seu rosto.",effects:{respect:4,rebellion:3,risk:2},next:19},
+{text:"Desaparecer novamente.",achievement:"FANTASMA 2.0",consequence:"Jax some antes que o governo o encontre.",penalty:"Deixa a resistência sem líder.",effects:{mystery:5,risk:-2},next:19}
+]},
+
+19:{
+location:"ÚLTIMO TERRAÇO",
+title:"O legado",
+text:`Jax e seu pai estavam diante do horizonte.
+<br><br>O velho sistema havia caído.
+<br><br>Mas centenas de servidores ainda existiam escondidos pelo mundo.
+<br><br>Seu pai colocou um pequeno dispositivo na mão dele.
+<br><br><span class="dialogue">"A guerra nunca foi sobre esta cidade."</span>`,
+choices:[
+{text:"Aceitar a próxima missão.",achievement:"O MUNDO É MAIOR",consequence:"Jax decide continuar.",penalty:"Não haverá mais vida normal.",effects:{courage:4,mystery:3,rebellion:3},next:20},
+{text:"Encerrar tudo e viver em paz.",achievement:"FINALMENTE PAZ",consequence:"Jax decide abandonar a guerra.",penalty:"O futuro continua incerto.",effects:{respect:4,risk:-3,courage:2},next:20}
+]},
+
+20:{
+location:"FORA DA CIDADE — AMANHECER",
+title:"Neon After Dark",
+text:`O sol nasceu.
+<br><br>Jax colocou os fones.
+<br><br>A estrada estava aberta.
+<br><br>O dispositivo continuava piscando.
+<br><br>Uma nova coordenada apareceu.
+<br><br>Ele sorriu.
+<br><br><span class="dialogue">"Então vamos descobrir até onde isso vai."</span>
+<br><br>A cidade ficou para trás.
+<br><br>Mas a história estava apenas começando.`,
+choices:[
+{text:"Seguir para a próxima cidade.",achievement:"NOVA TEMPORADA",consequence:"Jax aceita o chamado.",penalty:"O perigo continua.",effects:{courage:3,mystery:3,risk:2},next:"ending20"},
+{text:"Desligar o dispositivo.",achievement:"ÚLTIMO ADEUS",consequence:"Jax finalmente escolhe sua própria vida.",penalty:"Talvez nunca descubra toda a verdade.",effects:{respect:4,risk:-3,mystery:-1},next:"ending20"}
+]}
+};
+
+
+/* =========================================================
+   ESTADO
+========================================================= */
+
+let gameState={
+currentPart:1,
+courage:0,
+rebellion:0,
+mystery:0,
+respect:0,
+risk:0,
+qteSuccess:0,
+qteFail:0,
+choices:[],
+achievements:[],
+continuation:false
+};
+
+
+/* =========================================================
+   ELEMENTOS
+========================================================= */
+
+const intro=document.getElementById("intro");
+const game=document.getElementById("game");
+const ending=document.getElementById("ending");
+const transition=document.getElementById("transition");
+const chapter=document.getElementById("chapter");
+const locationEl=document.getElementById("location");
+const storyTitle=document.getElementById("storyTitle");
+const storyText=document.getElementById("storyText");
+const choicesEl=document.getElementById("choices");
+
+const courageBar=document.getElementById("courageBar");
+const rebellionBar=document.getElementById("rebellionBar");
+const mysteryBar=document.getElementById("mysteryBar");
+const respectBar=document.getElementById("respectBar");
+const riskBar=document.getElementById("riskBar");
+
+const courageNumber=document.getElementById("courageNumber");
+const rebellionNumber=document.getElementById("rebellionNumber");
+const mysteryNumber=document.getElementById("mysteryNumber");
+const respectNumber=document.getElementById("respectNumber");
+const riskNumber=document.getElementById("riskNumber");
+
+const qteSuccessNumber=document.getElementById("qteSuccessNumber");
+const qteFailNumber=document.getElementById("qteFailNumber");
+
+const progressValue=document.getElementById("progressValue");
+const progressText=document.getElementById("progressText");
+const achievementContainer=document.getElementById("achievementContainer");
+const punkWheel=document.getElementById("punkWheel");
+
+const qteOverlay=document.getElementById("qteOverlay");
+const qteType=document.getElementById("qteType");
+const qteTitle=document.getElementById("qteTitle");
+const qteDescription=document.getElementById("qteDescription");
+const qteTimerBar=document.getElementById("qteTimerBar");
+const qteButton=document.getElementById("qteButton");
+const aimArea=document.getElementById("aimArea");
+const aimTarget=document.getElementById("aimTarget");
+
+const qteFeedback=document.getElementById("qteFeedback");
+const qteFeedbackText=document.getElementById("qteFeedbackText");
+
+const battleOverlay=document.getElementById("battleOverlay");
+const battleEnemyName=document.getElementById("battleEnemyName");
+const enemyHpText=document.getElementById("enemyHpText");
+const enemyHpBar=document.getElementById("enemyHpBar");
+const playerHpText=document.getElementById("playerHpText");
+const playerHpBar=document.getElementById("playerHpBar");
+const battleMessage=document.getElementById("battleMessage");
+const battleMainActions=document.getElementById("battleMainActions");
+const battleAttacks=document.getElementById("battleAttacks");
+const battleResult=document.getElementById("battleResult");
+const battleResultTitle=document.getElementById("battleResultTitle");
+const battleResultText=document.getElementById("battleResultText");
+
+
+/* =========================================================
+   INÍCIO
+========================================================= */
+
+function startGame(){
+intro.style.opacity="0";
+intro.style.transform="scale(1.04)";
+setTimeout(()=>{
+intro.style.display="none";
+game.classList.add("active");
+loadGame();
+},700);
+}
+
+
+/* =========================================================
+   CARREGAR PARTE
+========================================================= */
+
+function loadGame(){
+
+const part=story[gameState.currentPart];
+if(!part)return;
+
+chapter.textContent=`PARTE ${gameState.currentPart} / 20`;
+locationEl.textContent=part.location;
+storyTitle.textContent=part.title;
+progressValue.style.width=`${(gameState.currentPart/20)*100}%`;
+progressText.textContent=`${gameState.currentPart} / 20`;
+
+updateStats();
+
+storyText.innerHTML=part.text;
+storyText.style.opacity="0";
+
+requestAnimationFrame(()=>{
+storyText.style.transition="opacity .7s ease";
+storyText.style.opacity="1";
+});
+
+renderChoices(part.choices);
+}
+
+
+/* =========================================================
+   ESCOLHAS
+========================================================= */
+
+function renderChoices(choices){
+
+choicesEl.innerHTML="";
+
+choices.forEach((choice,index)=>{
+
+const button=document.createElement("button");
+button.className="choice";
+
+let extras="";
+
+if(choice.qte){
+extras+=`<span class="choice-warning">⚡ QTE: ${getQTEName(choice.qte.type)}</span>`;
+}
+
+if(choice.battle){
+extras+=`<span class="choice-warning">⚔ BATALHA: ${choice.battle.enemy}</span>`;
+}
+
+button.innerHTML=`
+<span class="choice-number">ESCOLHA ${index+1}</span>
+<span class="choice-text">${choice.text}</span>
+<span class="choice-warning">⚠ ${choice.penalty}</span>
+${extras}
+`;
+
+button.onclick=()=>makeChoice(choice);
+choicesEl.appendChild(button);
+
+});
+}
+
+function getQTEName(type){
+if(type==="aim")return"MIRA / TIRO";
+if(type==="timing")return"ACERTO NO TEMPO";
+return"REAÇÃO";
+}
+
+
+/* =========================================================
+   ESCOLHER
+========================================================= */
+
+function makeChoice(choice){
+
+if(
+qteOverlay.classList.contains("active")||
+battleOverlay.classList.contains("active")
+)return;
+
+gameState.choices.push({
+part:gameState.currentPart,
+text:choice.text,
+consequence:choice.consequence,
+penalty:choice.penalty
+});
+
+applyEffects(choice.effects);
+
+if(choice.achievement&&!gameState.achievements.includes(choice.achievement)){
+gameState.achievements.push(choice.achievement);
+}
+
+updateStats();
+showAchievement(choice);
+saveGame();
+
+if(choice.battle){
+startBattle(choice.battle,choice.next);
+return;
+}
+
+if(choice.qte){
+startQTE(choice.qte,choice.next);
+return;
+}
+
+goNext(choice.next);
+}
+
+
+/* =========================================================
+   EFEITOS
+========================================================= */
+
+function applyEffects(effects){
+
+if(!effects)return;
+
+gameState.courage+=effects.courage||0;
+gameState.rebellion+=effects.rebellion||0;
+gameState.mystery+=effects.mystery||0;
+gameState.respect+=effects.respect||0;
+gameState.risk+=effects.risk||0;
+
+gameState.courage=Math.max(0,gameState.courage);
+gameState.rebellion=Math.max(0,gameState.rebellion);
+gameState.mystery=Math.max(0,gameState.mystery);
+gameState.respect=Math.max(0,gameState.respect);
+gameState.risk=Math.max(0,gameState.risk);
+}
+
+
+/* =========================================================
+   PRÓXIMA PARTE
+========================================================= */
+
+function goNext(next){
+
+transition.classList.add("active");
+
+setTimeout(()=>{
+
+if(next==="ending"){
+showEnding();
+}else if(next==="ending20"){
+showFinalContinuationEnding();
+}else{
+gameState.currentPart=next;
+loadGame();
+}
+
+setTimeout(()=>transition.classList.remove("active"),250);
+
+},700);
+}
+
+
+/* =========================================================
+   QTE
+========================================================= */
+
+let qteTimer=null;
+let qteStartTime=0;
+let qteDuration=0;
+let qteNext=null;
+let qteFinished=false;
+let currentQTE=null;
+let timingWindowStart=0;
+let timingWindowEnd=0;
+let aimTimer=null;
+
+function startQTE(qte,next){
+
+qteNext=next;
+currentQTE=qte;
+qteDuration=qte.time||2500;
+qteStartTime=performance.now();
+qteFinished=false;
+
+qteTitle.textContent=qte.title;
+qteDescription.textContent=qte.description;
+qteTimerBar.style.width="100%";
+
+aimArea.classList.remove("active");
+qteButton.style.display="block";
+
+if(qte.type==="aim"){
+qteType.textContent="QUICK TIME EVENT • MIRA";
+qteButton.textContent="ATIRAR";
+aimArea.classList.add("active");
+startAimTarget();
+}else if(qte.type==="timing"){
+qteType.textContent="QUICK TIME EVENT • TIMING";
+qteButton.textContent="ACERTAR";
+}else{
+qteType.textContent="QUICK TIME EVENT • REAÇÃO";
+qteButton.textContent="CLIQUE!";
+}
+
+qteOverlay.classList.add("active");
+
+if(qte.type==="timing"){
+timingWindowStart=.40;
+timingWindowEnd=.62;
+}
+
+qteTimer=requestAnimationFrame(updateQTETimer);
+}
+
+
+function updateQTETimer(timestamp){
+
+if(qteFinished)return;
+
+const elapsed=timestamp-qteStartTime;
+const remaining=Math.max(0,1-elapsed/qteDuration);
+
+qteTimerBar.style.width=`${remaining*100}%`;
+
+if(remaining<=0){
+finishQTE(false);
+return;
+}
+
+qteTimer=requestAnimationFrame(updateQTETimer);
+}
+
+
+function hitQTE(){
+
+if(qteFinished)return;
+
+const elapsed=performance.now()-qteStartTime;
+const progress=elapsed/qteDuration;
+
+if(currentQTE.type==="timing"){
+const success=progress>=timingWindowStart&&progress<=timingWindowEnd;
+finishQTE(success);
+return;
+}
+
+if(currentQTE.type==="aim"){
+return;
+}
+
+finishQTE(elapsed<=qteDuration);
+}
+
+
+function startAimTarget(){
+
+clearInterval(aimTimer);
+
+const move=()=>{
+const x=10+Math.random()*80;
+const y=15+Math.random()*70;
+aimTarget.style.left=x+"%";
+aimTarget.style.top=y+"%";
+};
+
+move();
+aimTimer=setInterval(move,650);
+}
+
+
+aimArea.addEventListener("click",function(event){
+
+if(qteFinished||!currentQTE||currentQTE.type!=="aim")return;
+
+const rect=aimArea.getBoundingClientRect();
+
+const x=event.clientX-rect.left;
+const y=event.clientY-rect.top;
+
+const tx=aimTarget.offsetLeft;
+const ty=aimTarget.offsetTop;
+
+const distance=Math.sqrt((x-tx)*(x-tx)+(y-ty)*(y-ty));
+
+finishQTE(distance<=42);
+
+});
+
+
+function finishQTE(success){
+
+if(qteFinished)return;
+
+qteFinished=true;
+
+cancelAnimationFrame(qteTimer);
+clearInterval(aimTimer);
+
+qteOverlay.classList.remove("active");
+aimArea.classList.remove("active");
+
+if(success){
+
+gameState.qteSuccess++;
+gameState.courage++;
+gameState.respect++;
+gameState.risk=Math.max(0,gameState.risk-1);
+
+showQTEFeedback(true);
+
+}else{
+
+gameState.qteFail++;
+gameState.courage=Math.max(0,gameState.courage-1);
+gameState.risk+=2;
+
+showQTEFeedback(false);
+}
+
+updateStats();
+saveGame();
+
+setTimeout(()=>goNext(qteNext),650);
+}
+
+
+function showQTEFeedback(success){
+
+qteFeedbackText.className="qte-feedback-text "+(success?"feedback-success":"feedback-fail");
+qteFeedbackText.textContent=success?"ACERTO!":"ERRO!";
+
+qteFeedback.classList.add("show");
+
+setTimeout(()=>qteFeedback.classList.remove("show"),600);
+}
+
+
+/* =========================================================
+   BATALHAS
+========================================================= */
+
+let battleState={
+enemy:"",
+enemyMax:100,
+enemyHp:100,
+playerMax:100,
+playerHp:100,
+next:null,
+finished:false
+};
+
+
+function startBattle(battle,next){
+
+battleState={
+enemy:battle.enemy,
+enemyMax:battle.hp||100,
+enemyHp:battle.hp||100,
+playerMax:100,
+playerHp:100,
+next:next,
+finished:false
+};
+
+battleEnemyName.textContent=battle.enemy;
+
+updateBattleHP();
+
+battleMessage.textContent=
+`A sombra de ${battle.enemy} bloqueia o caminho. O que Jax fará?`;
+
+battleMainActions.classList.remove("hidden");
+battleAttacks.classList.remove("active");
+battleResult.classList.remove("active");
+
+battleOverlay.classList.add("active");
+}
+
+
+function openAttacks(){
+
+battleMainActions.classList.add("hidden");
+battleAttacks.classList.add("active");
+
+battleMessage.textContent=
+"Escolha seu ataque. Cada golpe possui uma característica diferente.";
+}
+
+
+function battleAttack(type){
+
+if(battleState.finished)return;
+
+let damage=0;
+
+if(type===0){
+
+damage=20+Math.floor(Math.random()*16);
+
+gameState.courage+=1;
+
+battleMessage.textContent=
+"⚡ Jax usa GOLPE NEON! Um clarão atravessa a arena.";
+
+}else{
+
+damage=27+Math.floor(Math.random()*13);
+
+gameState.rebellion+=1;
+
+battleMessage.textContent=
+"🎸 Jax usa CORDA DE AÇO! O golpe vibra pelo concreto.";
+}
+
+battleState.enemyHp=Math.max(0,battleState.enemyHp-damage);
+
+updateBattleHP();
+
+if(battleState.enemyHp<=0){
+winBattle();
+return;
+}
+
+setTimeout(enemyAttack,650);
+}
+
+
+function enemyAttack(){
+
+if(battleState.finished)return;
+
+const damage=10+Math.floor(Math.random()*17);
+
+battleState.playerHp=Math.max(0,battleState.playerHp-damage);
+
+battleMessage.textContent=
+`O inimigo contra-ataca e causa ${damage} de dano.`;
+
+updateBattleHP();
+
+if(battleState.playerHp<=0){
+loseBattle();
+return;
+}
+
+battleMainActions.classList.remove("hidden");
+battleAttacks.classList.remove("active");
+
+setTimeout(()=>{
+if(!battleState.finished)
+battleMessage.textContent="A sombra está esperando seu próximo movimento.";
+},500);
+}
+
+
+function fleeBattle(){
+
+if(battleState.finished)return;
+
+const chance=Math.random();
+
+if(chance<.7){
+
+gameState.risk=Math.max(0,gameState.risk-1);
+
+battleState.finished=true;
+
+showBattleResult(
+"FUGA",
+"Jax escapou da batalha. Mas o inimigo agora sabe que ele está aqui.",
+false
+);
+
+}else{
+
+gameState.risk+=2;
+battleMessage.textContent="A fuga falhou! A sombra bloqueou a saída.";
+enemyAttack();
+}
+}
+
+
+function winBattle(){
+
+battleState.finished=true;
+
+gameState.courage+=2;
+gameState.respect+=3;
+gameState.risk=Math.max(0,gameState.risk-1);
+
+updateStats();
+saveGame();
+
+showBattleResult(
+"VITÓRIA",
+`${battleState.enemy} caiu. Jax continua avançando.`,
+true
+);
+}
+
+
+function loseBattle(){
+
+battleState.finished=true;
+
+gameState.courage=Math.max(0,gameState.courage-2);
+gameState.risk+=3;
+
+updateStats();
+saveGame();
+
+showBattleResult(
+"DERROTA",
+`Jax perdeu a batalha, mas conseguiu escapar antes do golpe final.`,
+false
+);
+}
+
+
+function showBattleResult(title,text,won){
+
+battleResultTitle.textContent=title;
+battleResultText.textContent=text;
+battleResult.classList.add("active");
+
+setTimeout(()=>{
+
+battleOverlay.classList.remove("active");
+battleResult.classList.remove("active");
+
+goNext(battleState.next);
+
+},1300);
+}
+
+
+function updateBattleHP(){
+
+enemyHpText.textContent=
+`${battleState.enemyHp} / ${battleState.enemyMax}`;
+
+enemyHpBar.style.width=
+`${(battleState.enemyHp/battleState.enemyMax)*100}%`;
+
+playerHpText.textContent=
+`${battleState.playerHp} / ${battleState.playerMax}`;
+
+playerHpBar.style.width=
+`${(battleState.playerHp/battleState.playerMax)*100}%`;
+}
+
+
+/* =========================================================
+   CONQUISTAS
+========================================================= */
+
+function showAchievement(choice){
+
+const achievement=document.createElement("div");
+achievement.className="achievement glass";
+
+achievement.innerHTML=`
+<div class="trophy">🏆</div>
+<div>
+<div class="achievement-small">CONQUISTA DESBLOQUEADA</div>
+<div class="achievement-title">${choice.achievement}</div>
+<div class="achievement-choice">"${choice.text}"</div>
+<div class="achievement-consequence">
+<span class="positive">✓ ${choice.consequence}</span><br>
+<span class="negative">⚠ ${choice.penalty}</span>
+</div>
+</div>
+`;
+
+achievementContainer.appendChild(achievement);
+
+requestAnimationFrame(()=>achievement.classList.add("show"));
+
+setTimeout(()=>{
+achievement.classList.remove("show");
+setTimeout(()=>achievement.remove(),650);
+},5000);
+}
+
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+function updateStats(){
+
+const max=25;
+
+const values=[
+["courage",gameState.courage,courageNumber,courageBar],
+["rebellion",gameState.rebellion,rebellionNumber,rebellionBar],
+["mystery",gameState.mystery,mysteryNumber,mysteryBar],
+["respect",gameState.respect,respectNumber,respectBar],
+["risk",gameState.risk,riskNumber,riskBar]
+];
+
+values.forEach(item=>{
+item[2].textContent=item[1];
+item[3].style.width=
+`${Math.min(item[1],max)/max*100}%`;
+});
+
+qteSuccessNumber.textContent=gameState.qteSuccess;
+qteFailNumber.textContent=gameState.qteFail;
+
+updateWheel();
+}
+
+
+/* =========================================================
+   RODA
+========================================================= */
+
+function updateWheel(){
+
+const courage=gameState.courage;
+const rebellion=gameState.rebellion;
+const mystery=gameState.mystery;
+const respect=gameState.respect;
+
+let color="#ff4fb3";
+
+if(mystery>rebellion&&mystery>courage&&mystery>=respect){
+color="#9d73ff";
+}else if(courage>=rebellion&&courage>=mystery&&courage>=respect){
+color="#dce9ff";
+}else if(respect>rebellion&&respect>courage){
+color="#63dfff";
+}else{
+color="#ff4fb3";
+}
+
+document.documentElement.style.setProperty("--accent",color);
+
+if(gameState.risk>=8){
+punkWheel.style.filter=
+`drop-shadow(0 0 25px ${color}) drop-shadow(0 0 60px rgba(255,0,80,.45))`;
+}else{
+punkWheel.style.filter=
+`drop-shadow(0 0 25px ${color})`;
+}
+}
+
+
+/* =========================================================
+   FINAIS
+========================================================= */
+
+function showEnding(){
+
+let title;
+let text;
+let canContinue=false;
+
+const c=gameState.courage;
+const r=gameState.rebellion;
+const m=gameState.mystery;
+const s=gameState.respect;
+const qs=gameState.qteSuccess;
+const qf=gameState.qteFail;
+const risk=gameState.risk;
+
+/* FINAL SECRETO */
+if(qs>=3&&qs>qf){
+
+title="THE SIGNAL";
+
+text=`
+Jax não apenas descobriu a verdade.
+<br><br>
+Ele conseguiu transmiti-la.
+<br><br>
+As últimas barreiras do GLASS caíram antes que alguém pudesse impedir.
+<br><br>
+Milhares de telas ficaram pretas.
+<br><br>
+<span class="dialogue">"AGORA VOCÊS SABEM."</span>
+<br><br>
+Mas uma mensagem escondida apareceu na última tela.
+<br><br>
+<span class="dialogue">"GLASS ERA APENAS O COMEÇO."</span>
+`;
+
+canContinue=true;
+
+}else if(qf>=3&&qf>qs){
+
+title="THE FALLEN";
+
+text=`
+Jax chegou longe demais.
+<br><br>
+Cada erro deixou uma marca.
+<br><br>
+O GLASS permaneceu parcialmente ativo.
+<br><br>
+A cidade não conheceu toda a verdade.
+<br><br>
+Mas uma ideia sobreviveu.
+<br><br>
+<span class="dialogue">"NINGUÉM CONSEGUE APAGAR UMA IDEIA."</span>
+`;
+
+}else if(r>=c&&r>=m){
+
+title="THE REBEL";
+
+text=`
+Jax ficou.
+<br><br>
+Não porque era seguro.
+<br><br>
+Mas porque encontrou algo que valia a pena proteger.
+<br><br>
+A cidade acordou sabendo a verdade.
+<br><br>
+Uma nova resistência nasceu nas ruas.
+<br><br>
+E alguém deixou uma mensagem:
+<br><br>
+<span class="dialogue">"SE A CIDADE AINDA RESPIRA, A LUTA NÃO ACABOU."</span>
+`;
+
+canContinue=true;
+
+}else if(m>=c&&m>=r){
+
+title="THE GHOST";
+
+text=`
+Quando o sol nasceu, Jax já havia desaparecido.
+<br><br>
+Nenhuma câmera registrou sua saída.
+<br><br>
+Nenhum telefone conseguiu rastreá-lo.
+<br><br>
+Mas havia uma última mensagem:
+<br><br>
+<span class="dialogue">"VOCÊS NÃO ESTÃO SOZINHOS."</span>
+`;
+
+}else if(s>=c&&s>=r){
+
+title="THE GUARDIAN";
+
+text=`
+Jax poderia ter destruído tudo.
+<br><br>
+Poderia ter escolhido apenas a própria liberdade.
+<br><br>
+Mas escolheu ficar.
+<br><br>
+As pessoas começaram a recuperar suas vozes.
+<br><br>
+Jax não virou rei.
+<br><br>
+Virou símbolo.
+<br><br>
+E símbolos podem sobreviver por muito tempo.
+`;
+
+canContinue=true;
+
+}else if(risk>=10){
+
+title="THE PRICE";
+
+text=`
+Jax venceu.
+<br><br>
+Mas a cidade cobrou seu preço.
+<br><br>
+Tudo que ele fez deixou cicatrizes.
+<br><br>
+A verdade veio à tona, mas Jax precisou desaparecer.
+<br><br>
+Antes de partir, escreveu:
+<br><br>
+<span class="dialogue">"LIBERDADE NUNCA FOI DE GRAÇA."</span>
+`;
+
+}else{
+
+title="THE SURVIVOR";
+
+text=`
+Jax sobreviveu.
+<br><br>
+Não ganhou a cidade.
+<br><br>
+Não destruiu todos os inimigos.
+<br><br>
+Mas descobriu algo mais importante:
+<br><br>
+Nem toda batalha precisa ser vencida para valer a pena ser lutada.
+`;
+
+}
+
+document.getElementById("endingTitle").textContent=title;
+document.getElementById("endingText").innerHTML=text;
+
+const continueBtn=document.getElementById("continueBtn");
+
+continueBtn.style.display=canContinue?"inline-block":"none";
+
+if(canContinue){
+gameState.continuation=true;
+saveGame();
+}
+
+ending.classList.add("active");
+}
+
+
+/* =========================================================
+   FINAL DA CONTINUAÇÃO
+========================================================= */
+
+function showFinalContinuationEnding(){
+
+let title;
+let text;
+
+if(gameState.mystery>=gameState.courage&&gameState.mystery>=gameState.respect){
+
+title="THE NEXT CITY";
+
+text=`
+Jax seguiu a coordenada.
+<br><br>
+Muito longe dali, outra cidade brilhava sob uma tempestade.
+<br><br>
+O dispositivo mostrou um último nome:
+<br><br>
+<span class="dialogue">NIGHTFALL // FASE 2</span>
+<br><br>
+Jax colocou os fones.
+<br><br>
+A guitarra começou a tocar.
+<br><br>
+A estrada continuava.
+`;
+
+}else if(gameState.respect>=gameState.rebellion){
+
+title="THE LEGACY";
+
+text=`
+Jax desligou o dispositivo.
+<br><br>
+Pela primeira vez, escolheu uma vida que não envolvia fugir ou lutar.
+<br><br>
+Seu pai sorriu.
+<br><br>
+Mas, naquela noite, alguém encontrou o símbolo da resistência em outra cidade.
+<br><br>
+A história de Jax havia terminado.
+<br><br>
+A lenda, não.
+`;
+
+}else if(gameState.rebellion>=gameState.courage){
+
+title="THE REVOLUTION";
+
+text=`
+Jax atravessou a fronteira.
+<br><br>
+Atrás dele, milhares de pessoas continuavam lutando.
+<br><br>
+Na frente, existiam sistemas ainda maiores.
+<br><br>
+Jax abriu um mapa.
+<br><br>
+<span class="dialogue">"Então vamos derrubar todos."</span>
+<br><br>
+NEON AFTER DARK estava apenas começando.
+`;
+
+}else{
+
+title="THE ROAD";
+
+text=`
+Jax continuou pela estrada.
+<br><br>
+Sem câmeras.
+<br><br>
+Sem chefes.
+<br><br>
+Sem GLASS.
+<br><br>
+Por enquanto.
+<br><br>
+Ele sorriu e aumentou o volume dos fones.
+`;
+
+}
+
+document.getElementById("endingTitle").textContent=title;
+document.getElementById("endingText").innerHTML=text;
+document.getElementById("continueBtn").style.display="none";
+
+ending.classList.add("active");
+}
+
+
+/* =========================================================
+   CONTINUAR
+========================================================= */
+
+function continueStory(){
+
+ending.classList.remove("active");
+
+gameState.currentPart=11;
+gameState.continuation=true;
+
+saveGame();
+
+transition.classList.add("active");
+
+setTimeout(()=>{
+
+loadGame();
+
+setTimeout(()=>transition.classList.remove("active"),250);
+
+},600);
+}
+
+
+/* =========================================================
+   REINICIAR
+========================================================= */
+
+function restartGame(){
+
+gameState={
+currentPart:1,
+courage:0,
+rebellion:0,
+mystery:0,
+respect:0,
+risk:0,
+qteSuccess:0,
+qteFail:0,
+choices:[],
+achievements:[],
+continuation:false
+};
+
+localStorage.removeItem("neonAfterDark");
+
+ending.classList.remove("active");
+battleOverlay.classList.remove("active");
+qteOverlay.classList.remove("active");
+
+loadGame();
+}
+
+
+/* =========================================================
+   ACESSIBILIDADE
+========================================================= */
+
+let textScale=Number(localStorage.getItem("neonTextScale"))||1;
+let zoomScale=Number(localStorage.getItem("neonZoom"))||1;
+
+function applyAccessibility(){
+
+document.documentElement.style.setProperty("--text-scale",textScale);
+document.body.style.zoom=zoomScale;
+}
+
+function changeTextSize(amount){
+
+textScale+=amount*.08;
+textScale=Math.max(.76,Math.min(1.5,textScale));
+
+localStorage.setItem("neonTextScale",textScale);
+applyAccessibility();
+}
+
+function changeZoom(amount){
+
+if(amount===0){
+zoomScale=1;
+}else{
+zoomScale+=amount*.05;
+}
+
+zoomScale=Math.max(.85,Math.min(1.25,zoomScale));
+
+localStorage.setItem("neonZoom",zoomScale);
+applyAccessibility();
+}
+
+function resetAccessibility(){
+
+textScale=1;
+zoomScale=1;
+
+localStorage.setItem("neonTextScale",1);
+localStorage.setItem("neonZoom",1);
+
+applyAccessibility();
+}
+
+function toggleAccessibility(){
+
+document.getElementById("accessibility").classList.toggle("open");
+}
+
+
+/* =========================================================
+   SAVE
+========================================================= */
+
+function saveGame(){
+
+localStorage.setItem(
+"neonAfterDark",
+JSON.stringify(gameState)
+);
+}
+
+
+/* =========================================================
+   LOAD
+========================================================= */
+
+function loadSavedGame(){
+
+const saved=localStorage.getItem("neonAfterDark");
+
+if(!saved)return;
+
+try{
+
+const data=JSON.parse(saved);
+
+gameState={
+...gameState,
+...data
+};
+
+}catch(error){
+
+console.log("Save inválido.");
+
+}
+}
+
+
+/* =========================================================
+   MOUSE
+========================================================= */
+
+document.addEventListener("mousemove",event=>{
+
+const x=event.clientX/window.innerWidth*100;
+const y=event.clientY/window.innerHeight*100;
+
+document.querySelectorAll(".glass").forEach(card=>{
+
+card.style.setProperty("--mouse-x",`${x}%`);
+card.style.setProperty("--mouse-y",`${y}%`);
+
+});
+
+document.getElementById("background").style.transform=`
+scale(1.025)
+translate(
+${(x-50)*-.012}%,
+${(y-50)*-.012}%
+)
+`;
+
+});
+
+
+/* =========================================================
+   TECLADO
+========================================================= */
+
+document.addEventListener("keydown",event=>{
+
+/* QTE */
+if(qteOverlay.classList.contains("active")){
+
+if(event.code==="Space"||event.key==="Enter"){
+event.preventDefault();
+hitQTE();
+}
+
+return;
+}
+
+/* BATALHA */
+if(battleOverlay.classList.contains("active")){
+
+if(event.key==="1"){
+if(!battleMainActions.classList.contains("hidden")){
+openAttacks();
+}else{
+battleAttack(0);
+}
+}
+
+if(event.key==="2"){
+if(!battleMainActions.classList.contains("hidden")){
+fleeBattle();
+}else{
+battleAttack(1);
+}
+}
+
+return;
+}
+
+/* ESCOLHAS */
+const choices=document.querySelectorAll(".choice");
+
+if(event.key==="1"&&choices[0]){
+choices[0].click();
+}
+
+if(event.key==="2"&&choices[1]){
+choices[1].click();
+}
+
+if(event.key==="+"||event.key==="="){
+changeTextSize(1);
+}
+
+if(event.key==="-"){
+changeTextSize(-1);
+}
+
+});
+
+
+/* =========================================================
+   INICIALIZAÇÃO
+========================================================= */
+
+loadSavedGame();
+applyAccessibility();
+updateStats();
+
+</script>
+
+</body>
+</html>
+Exibindo index.html…
